@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Control Mensual de Gastos</title>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --text: #172033;
+      --muted: #6b7280;
+      --border: #dfe5ee;
+      --primary: #1d4ed8;
+      --primary-dark: #163ea7;
+      --success: #15803d;
+      --success-soft: #ecfdf3;
+      --warning: #b45309;
+      --warning-soft: #fff7ed;
+      --danger: #b91c1c;
+      --danger-soft: #fef2f2;
+      --neutral-soft: #f1f5f9;
+      --shadow: 0 14px 38px rgba(15, 23, 42, 0.08);
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(29, 78, 216, 0.08), transparent 28%),
+        var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app-shell {
+      width: min(100%, 980px);
+      margin: 0 auto;
+      padding: 18px 14px 40px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #0f172a, #1e3a8a);
+      color: #fff;
+      border-radius: 26px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      color: #bfdbfe;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.65rem, 5vw, 2.5rem);
+      line-height: 1.08;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: #dbeafe;
+      font-size: 0.95rem;
+    }
+
+    .month-control {
+      display: grid;
+      grid-template-columns: 44px 1fr 44px;
+      gap: 8px;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 8px;
+      border-radius: 16px;
+      min-width: 250px;
+    }
+
+    .month-control button,
+    .icon-button {
+      border: 0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.16s ease, opacity 0.16s ease;
+    }
+
+    .month-control button {
+      width: 44px;
+      height: 44px;
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+      font-size: 1.2rem;
+    }
+
+    .month-control button:active,
+    .icon-button:active,
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    #monthLabel {
+      text-align: center;
+      font-weight: 800;
+      text-transform: capitalize;
+    }
+
+    .available-wrap {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: end;
+      margin-top: 18px;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 7px;
+    }
+
+    .hero .field-label {
+      color: #dbeafe;
+    }
+
+    .money-input {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 16px;
+      padding: 0 16px;
+    }
+
+    .money-input span {
+      color: #bfdbfe;
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+
+    .money-input input {
+      width: 100%;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: #fff;
+      font-size: clamp(1.5rem, 6vw, 2.25rem);
+      font-weight: 900;
+      padding: 14px 0;
+    }
+
+    .money-input input::placeholder {
+      color: rgba(255,255,255,0.5);
+    }
+
+    .auto-save {
+      color: #bfdbfe;
+      font-size: 0.78rem;
+      white-space: nowrap;
+      padding-bottom: 14px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid rgba(223, 229, 238, 0.9);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: 0 9px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .summary-card .label {
+      display: block;
+      font-size: 0.76rem;
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+
+    .summary-card strong {
+      display: block;
+      font-size: clamp(1rem, 3vw, 1.45rem);
+      overflow-wrap: anywhere;
+    }
+
+    .summary-card.success {
+      background: var(--success-soft);
+      border-color: #bbf7d0;
+    }
+
+    .summary-card.warning {
+      background: var(--warning-soft);
+      border-color: #fed7aa;
+    }
+
+    .summary-card.danger {
+      background: var(--danger-soft);
+      border-color: #fecaca;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid rgba(223, 229, 238, 0.9);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .panel-subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 12px;
+      overflow: hidden;
+      background: #e5e7eb;
+      border-radius: 999px;
+      margin: 14px 0 8px;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #2563eb, #1d4ed8);
+      border-radius: inherit;
+      transition: width 0.25s ease;
+    }
+
+    .progress-caption {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .expense-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .expense-card {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--surface-soft);
+      overflow: hidden;
+    }
+
+    .expense-card[data-status="paid"] {
+      border-color: #bbf7d0;
+      background: #f7fff9;
+    }
+
+    .expense-card[data-status="pending"] {
+      border-color: #fed7aa;
+      background: #fffaf4;
+    }
+
+    .expense-card[data-status="empty"] {
+      background: #f8fafc;
+    }
+
+    .expense-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid rgba(223, 229, 238, 0.8);
+    }
+
+    .expense-name {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .status-badge {
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 0.72rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .status-paid {
+      background: #dcfce7;
+      color: var(--success);
+    }
+
+    .status-pending {
+      background: #ffedd5;
+      color: var(--warning);
+    }
+
+    .status-empty {
+      background: #e2e8f0;
+      color: #475569;
+    }
+
+    .expense-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.8fr) minmax(0, 0.8fr);
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .expense-body .full {
+      grid-column: 1 / -1;
+    }
+
+    .control {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+      padding: 11px 12px;
+    }
+
+    .control:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.18);
+    }
+
+    textarea.control {
+      min-height: 72px;
+      resize: vertical;
+    }
+
+    .expense-actions {
+      display: flex;
+      justify-content: flex-end;
+      padding: 0 16px 16px;
+    }
+
+    .link-button {
+      border: 0;
+      background: transparent;
+      color: var(--danger);
+      font-weight: 800;
+      cursor: pointer;
+      padding: 8px 2px;
+    }
+
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 14px;
+      min-height: 48px;
+      padding: 12px 14px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: opacity 0.16s ease, transform 0.16s ease;
+    }
+
+    .btn:hover {
+      opacity: 0.92;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+
+    .btn-success {
+      background: #15803d;
+      color: #fff;
+    }
+
+    .btn-warning {
+      background: #fff7ed;
+      color: #9a3412;
+      border: 1px solid #fed7aa;
+    }
+
+    .btn-danger {
+      background: #fef2f2;
+      color: var(--danger);
+      border: 1px solid #fecaca;
+    }
+
+    .utility-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .notice {
+      display: none;
+      margin-bottom: 14px;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .notice.show {
+      display: block;
+    }
+
+    .notice.info {
+      background: #eff6ff;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+    }
+
+    .notice.success {
+      background: #ecfdf3;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    .notice.error {
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .footer {
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.78rem;
+      line-height: 1.5;
+      padding: 2px 10px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 760px) {
+      .hero-top {
+        flex-direction: column;
+      }
+
+      .month-control {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .available-wrap {
+        grid-template-columns: 1fr;
+      }
+
+      .auto-save {
+        padding-bottom: 0;
+      }
+
+      .summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .expense-body {
+        grid-template-columns: 1fr;
+      }
+
+      .expense-body .full {
+        grid-column: auto;
+      }
+
+      .actions-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .utility-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 430px) {
+      .app-shell {
+        padding: 10px 10px 32px;
+      }
+
+      .hero,
+      .panel {
+        border-radius: 20px;
+      }
+
+      .hero {
+        padding: 18px;
+      }
+
+      .summary-card {
+        padding: 13px;
+      }
+
+      .panel {
+        padding: 14px;
+      }
+
+      .utility-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .progress-caption {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero">
+      <div class="hero-top">
+        <div>
+          <p class="eyebrow">Finanzas personales</p>
+          <h1>Control mensual de gastos</h1>
+          <p class="subtitle">Registrá tus gastos fijos, controlá pagos y calculá cuánto dinero queda libre.</p>
+        </div>
+
+        <div class="month-control" aria-label="Selector de mes">
+          <button type="button" id="prevMonth" aria-label="Mes anterior">‹</button>
+          <div id="monthLabel"></div>
+          <button type="button" id="nextMonth" aria-label="Mes siguiente">›</button>
+        </div>
+      </div>
+
+      <div class="available-wrap">
+        <div>
+          <label for="availableMoney" class="field-label">Dinero disponible del mes</label>
+          <div class="money-input">
+            <span>$</span>
+            <input
+              id="availableMoney"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              placeholder="0"
+              aria-label="Dinero disponible"
+            />
+          </div>
+        </div>
+        <div class="auto-save">Guardado automático local</div>
+      </div>
+    </section>
+
+    <div id="notice" class="notice info" role="status"></div>
+
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span class="label">Total de gastos</span>
+        <strong id="totalExpenses">$ 0</strong>
+      </article>
+      <article class="summary-card success">
+        <span class="label">Total pagado</span>
+        <strong id="totalPaid">$ 0</strong>
+      </article>
+      <article class="summary-card warning">
+        <span class="label">Total pendiente</span>
+        <strong id="totalPending">$ 0</strong>
+      </article>
+      <article class="summary-card" id="freeMoneyCard">
+        <span class="label">Dinero libre proyectado</span>
+        <strong id="freeMoney">$ 0</strong>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Estado del presupuesto</h2>
+          <p class="panel-subtitle" id="budgetStatusText">Ingresá tu dinero disponible para comenzar.</p>
+        </div>
+      </div>
+      <div class="progress-track" aria-hidden="true">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+      <div class="progress-caption">
+        <span id="progressText">0 % utilizado</span>
+        <span id="currentBalanceText">Saldo actual estimado: $ 0</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Gastos del mes</h2>
+          <p class="panel-subtitle">Completá importes, fechas, estados y observaciones.</p>
+        </div>
+      </div>
+
+      <div id="expenseList" class="expense-list"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Acciones principales</h2>
+          <p class="panel-subtitle">Compartí el resumen o reutilizá la información anterior.</p>
+        </div>
+      </div>
+
+      <div class="actions-grid">
+        <button type="button" class="btn btn-success" id="shareWhatsApp">Compartir por WhatsApp</button>
+        <button type="button" class="btn btn-primary" id="copySummary">Copiar resumen</button>
+        <button type="button" class="btn btn-secondary" id="copyPreviousMonth">Copiar mes anterior</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Respaldo y mantenimiento</h2>
+          <p class="panel-subtitle">Protegé tus datos exportando una copia periódicamente.</p>
+        </div>
+      </div>
+
+      <div class="utility-grid">
+        <button type="button" class="btn btn-secondary" id="exportData">Exportar respaldo</button>
+        <button type="button" class="btn btn-secondary" id="importData">Importar respaldo</button>
+        <button type="button" class="btn btn-warning" id="clearCurrentMonth">Limpiar mes actual</button>
+        <button type="button" class="btn btn-danger" id="clearAllData">Borrar todos los datos</button>
+      </div>
+
+      <input type="file" id="importFile" class="hidden" accept="application/json,.json" />
+    </section>
+
+    <p class="footer">
+      Los datos se guardan únicamente en este navegador mediante almacenamiento local.
+      Exportá un respaldo antes de borrar datos del navegador, cambiar de celular o reemplazar el archivo.
+    </p>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const STORAGE_KEY = "control-gastos-v1";
+      const DEFAULT_EXPENSES = [
+        "Alquiler",
+        "Expensas",
+        "Tasa General Municipal",
+        "Edenor",
+        "Naturgy",
+        "Telecentro",
+        "Personal",
+        "Impuesto Automotor",
+        "Tarjeta Crédito Visa",
+        "Tarjeta Crédito Amex"
+      ];
+
+      const moneyFormatter = new Intl.NumberFormat("es-AR", {
+        style: "currency",
+        currency: "ARS",
+        maximumFractionDigits: 2
+      });
+
+      const monthFormatter = new Intl.DateTimeFormat("es-AR", {
+        month: "long",
+        year: "numeric"
+      });
+
+      let currentDate = new Date();
+      currentDate.setDate(1);
+
+      const elements = {
+        monthLabel: document.getElementById("monthLabel"),
+        availableMoney: document.getElementById("availableMoney"),
+        expenseList: document.getElementById("expenseList"),
+        totalExpenses: document.getElementById("totalExpenses"),
+        totalPaid: document.getElementById("totalPaid"),
+        totalPending: document.getElementById("totalPending"),
+        freeMoney: document.getElementById("freeMoney"),
+        freeMoneyCard: document.getElementById("freeMoneyCard"),
+        progressBar: document.getElementById("progressBar"),
+        progressText: document.getElementById("progressText"),
+        currentBalanceText: document.getElementById("currentBalanceText"),
+        budgetStatusText: document.getElementById("budgetStatusText"),
+        notice: document.getElementById("notice"),
+        importFile: document.getElementById("importFile")
+      };
+
+      function emptyExpense(name) {
+        return {
+          id: slugify(name),
+          name,
+          amount: 0,
+          status: "empty",
+          date: "",
+          notes: ""
+        };
+      }
+
+      function createMonthData() {
+        return {
+          availableMoney: 0,
+          expenses: DEFAULT_EXPENSES.map(emptyExpense),
+          updatedAt: new Date().toISOString()
+        };
+      }
+
+      function getDefaultState() {
+        return {
+          version: 1,
+          months: {}
+        };
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return getDefaultState();
+
+          const parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object" || !parsed.months) {
+            return getDefaultState();
+          }
+
+          return parsed;
+        } catch (error) {
+          showNotice("No se pudieron leer los datos guardados. Se inició una estructura nueva.", "error");
+          return getDefaultState();
+        }
+      }
+
+      let state = loadState();
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (error) {
+          showNotice("No se pudieron guardar los cambios en este navegador.", "error");
+        }
+      }
+
+      function monthKey(date = currentDate) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      }
+
+      function ensureCurrentMonth() {
+        const key = monthKey();
+        if (!state.months[key]) {
+          state.months[key] = createMonthData();
+          saveState();
+        }
+
+        const month = state.months[key];
+        const existingNames = new Set(month.expenses.map(item => item.name));
+        DEFAULT_EXPENSES.forEach(name => {
+          if (!existingNames.has(name)) {
+            month.expenses.push(emptyExpense(name));
+          }
+        });
+
+        return month;
+      }
+
+      function slugify(value) {
+        return value
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "");
+      }
+
+      function parseAmount(value) {
+        if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+        const normalized = String(value)
+          .trim()
+          .replace(/\s/g, "")
+          .replace(/\$/g, "")
+          .replace(/\./g, "")
+          .replace(",", ".");
+        const number = Number(normalized);
+        return Number.isFinite(number) ? Math.max(0, number) : 0;
+      }
+
+      function formatEditableAmount(amount) {
+        if (!amount) return "";
+        return new Intl.NumberFormat("es-AR", {
+          maximumFractionDigits: 2
+        }).format(amount);
+      }
+
+      function statusLabel(status) {
+        if (status === "paid") return "Pagado";
+        if (status === "pending") return "Pendiente";
+        return "Sin cargar";
+      }
+
+      function normalizeStatus(expense) {
+        if (!expense.amount || expense.amount <= 0) {
+          expense.status = "empty";
+        } else if (expense.status === "empty") {
+          expense.status = "pending";
+        }
+      }
+
+      function render() {
+        const month = ensureCurrentMonth();
+        elements.monthLabel.textContent = monthFormatter.format(currentDate);
+        elements.availableMoney.value = formatEditableAmount(month.availableMoney);
+
+        renderExpenses(month);
+        updateSummary();
+      }
+
+      function renderExpenses(month) {
+        elements.expenseList.innerHTML = "";
+
+        month.expenses.forEach((expense, index) => {
+          normalizeStatus(expense);
+
+          const card = document.createElement("article");
+          card.className = "expense-card";
+          card.dataset.status = expense.status;
+
+          const statusClass =
+            expense.status === "paid"
+              ? "status-paid"
+              : expense.status === "pending"
+              ? "status-pending"
+              : "status-empty";
+
+          card.innerHTML = `
+            <div class="expense-head">
+              <h3 class="expense-name">${escapeHtml(expense.name)}</h3>
+              <span class="status-badge ${statusClass}">${statusLabel(expense.status)}</span>
+            </div>
+
+            <div class="expense-body">
+              <div>
+                <label class="field-label" for="amount-${index}">Importe</label>
+                <input
+                  class="control"
+                  id="amount-${index}"
+                  type="text"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  data-field="amount"
+                  data-index="${index}"
+                  value="${escapeHtml(formatEditableAmount(expense.amount))}"
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
+                <label class="field-label" for="status-${index}">Estado</label>
+                <select class="control" id="status-${index}" data-field="status" data-index="${index}">
+                  <option value="empty" ${expense.status === "empty" ? "selected" : ""}>Sin cargar</option>
+                  <option value="pending" ${expense.status === "pending" ? "selected" : ""}>Pendiente</option>
+                  <option value="paid" ${expense.status === "paid" ? "selected" : ""}>Pagado</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="field-label" for="date-${index}">Fecha</label>
+                <input
+                  class="control"
+                  id="date-${index}"
+                  type="date"
+                  data-field="date"
+                  data-index="${index}"
+                  value="${escapeHtml(expense.date || "")}"
+                />
+              </div>
+
+              <div class="full">
+                <label class="field-label" for="notes-${index}">Observación</label>
+                <textarea
+                  class="control"
+                  id="notes-${index}"
+                  data-field="notes"
+                  data-index="${index}"
+                  placeholder="Ejemplo: vence el día 10"
+                >${escapeHtml(expense.notes || "")}</textarea>
+              </div>
+            </div>
+
+            <div class="expense-actions">
+              <button type="button" class="link-button" data-action="clear" data-index="${index}">
+                Limpiar gasto
+              </button>
+            </div>
+          `;
+
+          elements.expenseList.appendChild(card);
+        });
+
+        elements.expenseList.querySelectorAll("[data-field]").forEach(control => {
+          control.addEventListener("change", handleExpenseChange);
+          if (control.dataset.field === "amount" || control.dataset.field === "notes") {
+            control.addEventListener("input", handleExpenseChange);
+          }
+        });
+
+        elements.expenseList.querySelectorAll("[data-action='clear']").forEach(button => {
+          button.addEventListener("click", () => clearExpense(Number(button.dataset.index)));
+        });
+      }
+
+      function handleExpenseChange(event) {
+        const index = Number(event.target.dataset.index);
+        const field = event.target.dataset.field;
+        const month = ensureCurrentMonth();
+        const expense = month.expenses[index];
+
+        if (!expense) return;
+
+        if (field === "amount") {
+          expense.amount = parseAmount(event.target.value);
+          normalizeStatus(expense);
+        } else {
+          expense[field] = event.target.value;
+          if (field === "status" && expense.status !== "empty" && expense.amount <= 0) {
+            expense.status = "empty";
+          }
+        }
+
+        month.updatedAt = new Date().toISOString();
+        saveState();
+        updateSummary();
+
+        const card = event.target.closest(".expense-card");
+        if (card) {
+          card.dataset.status = expense.status;
+          const badge = card.querySelector(".status-badge");
+          badge.className = `status-badge ${
+            expense.status === "paid"
+              ? "status-paid"
+              : expense.status === "pending"
+              ? "status-pending"
+              : "status-empty"
+          }`;
+          badge.textContent = statusLabel(expense.status);
+
+          const select = card.querySelector("[data-field='status']");
+          if (select && select.value !== expense.status) {
+            select.value = expense.status;
+          }
+        }
+      }
+
+      function clearExpense(index) {
+        const month = ensureCurrentMonth();
+        const expense = month.expenses[index];
+        if (!expense) return;
+
+        const confirmed = confirm(`¿Querés limpiar los datos de "${expense.name}"?`);
+        if (!confirmed) return;
+
+        month.expenses[index] = emptyExpense(expense.name);
+        month.updatedAt = new Date().toISOString();
+        saveState();
+        render();
+        showNotice(`Se limpiaron los datos de ${expense.name}.`, "success");
+      }
+
+      function getTotals() {
+        const month = ensureCurrentMonth();
+        const total = month.expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+        const paid = month.expenses
+          .filter(item => item.status === "paid")
+          .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+        const pending = month.expenses
+          .filter(item => item.status === "pending")
+          .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+        const free = (Number(month.availableMoney) || 0) - total;
+        const currentBalance = (Number(month.availableMoney) || 0) - paid;
+
+        return {
+          total,
+          paid,
+          pending,
+          free,
+          currentBalance,
+          available: Number(month.availableMoney) || 0
+        };
+      }
+
+      function updateSummary() {
+        const totals = getTotals();
+        elements.totalExpenses.textContent = moneyFormatter.format(totals.total);
+        elements.totalPaid.textContent = moneyFormatter.format(totals.paid);
+        elements.totalPending.textContent = moneyFormatter.format(totals.pending);
+        elements.freeMoney.textContent = moneyFormatter.format(totals.free);
+        elements.currentBalanceText.textContent =
+          `Saldo actual estimado: ${moneyFormatter.format(totals.currentBalance)}`;
+
+        const percentage = totals.available > 0 ? (totals.total / totals.available) * 100 : 0;
+        const safePercentage = Math.min(Math.max(percentage, 0), 100);
+        elements.progressBar.style.width = `${safePercentage}%`;
+        elements.progressText.textContent = `${percentage.toFixed(1).replace(".", ",")} % utilizado`;
+
+        elements.freeMoneyCard.classList.remove("success", "warning", "danger");
+
+        if (totals.available <= 0) {
+          elements.budgetStatusText.textContent = "Ingresá tu dinero disponible para comenzar.";
+        } else if (totals.free < 0) {
+          elements.freeMoneyCard.classList.add("danger");
+          elements.budgetStatusText.textContent =
+            `Los gastos superan el dinero disponible por ${moneyFormatter.format(Math.abs(totals.free))}.`;
+          elements.progressBar.style.background = "linear-gradient(90deg, #dc2626, #b91c1c)";
+        } else if (percentage >= 90) {
+          elements.freeMoneyCard.classList.add("warning");
+          elements.budgetStatusText.textContent = "El presupuesto está muy ajustado: queda menos del 10 % libre.";
+          elements.progressBar.style.background = "linear-gradient(90deg, #f59e0b, #b45309)";
+        } else {
+          elements.freeMoneyCard.classList.add("success");
+          elements.budgetStatusText.textContent =
+            `Quedan ${moneyFormatter.format(totals.free)} disponibles después de contemplar todos los gastos.`;
+          elements.progressBar.style.background = "linear-gradient(90deg, #2563eb, #1d4ed8)";
+        }
+      }
+
+      function handleAvailableMoney() {
+        const month = ensureCurrentMonth();
+        month.availableMoney = parseAmount(elements.availableMoney.value);
+        month.updatedAt = new Date().toISOString();
+        saveState();
+        updateSummary();
+      }
+
+      elements.availableMoney.addEventListener("input", handleAvailableMoney);
+      elements.availableMoney.addEventListener("blur", () => {
+        const month = ensureCurrentMonth();
+        elements.availableMoney.value = formatEditableAmount(month.availableMoney);
+      });
+
+      document.getElementById("prevMonth").addEventListener("click", () => changeMonth(-1));
+      document.getElementById("nextMonth").addEventListener("click", () => changeMonth(1));
+
+      function changeMonth(offset) {
+        currentDate.setMonth(currentDate.getMonth() + offset);
+        render();
+      }
+
+      function buildSummary() {
+        const month = ensureCurrentMonth();
+        const totals = getTotals();
+        const incomplete = month.expenses.filter(item => !item.amount || item.amount <= 0);
+
+        const lines = [
+          `📊 RESUMEN DE GASTOS — ${monthFormatter.format(currentDate).toUpperCase()}`,
+          "",
+          `💰 Dinero disponible: ${moneyFormatter.format(totals.available)}`,
+          `💸 Total de gastos: ${moneyFormatter.format(totals.total)}`,
+          `✅ Total pagado: ${moneyFormatter.format(totals.paid)}`,
+          `⏳ Total pendiente: ${moneyFormatter.format(totals.pending)}`,
+          `${totals.free >= 0 ? "🟢" : "🔴"} Dinero libre proyectado: ${moneyFormatter.format(totals.free)}`,
+          `🏦 Saldo actual estimado: ${moneyFormatter.format(totals.currentBalance)}`,
+          "",
+          "DETALLE"
+        ];
+
+        month.expenses.forEach(item => {
+          const icon = item.status === "paid" ? "✅" : item.status === "pending" ? "⏳" : "⚪";
+          const amount = item.amount > 0 ? moneyFormatter.format(item.amount) : "Sin cargar";
+          const details = [];
+          if (item.date) details.push(formatDate(item.date));
+          if (item.notes) details.push(item.notes.trim());
+
+          lines.push(`${icon} ${item.name}: ${amount}${details.length ? ` — ${details.join(" | ")}` : ""}`);
+        });
+
+        if (incomplete.length) {
+          lines.push("");
+          lines.push(`⚠️ Gastos sin completar: ${incomplete.map(item => item.name).join(", ")}.`);
+        }
+
+        lines.push("");
+        lines.push(`Generado el ${new Intl.DateTimeFormat("es-AR", {
+          dateStyle: "short",
+          timeStyle: "short"
+        }).format(new Date())}.`);
+
+        return lines.join("\n");
+      }
+
+      document.getElementById("shareWhatsApp").addEventListener("click", () => {
+        const summary = buildSummary();
+        const url = `https://wa.me/?text=${encodeURIComponent(summary)}`;
+
+        try {
+          window.location.href = url;
+        } catch (error) {
+          showNotice("No se pudo abrir WhatsApp. Probá con el botón Copiar resumen.", "error");
+        }
+      });
+
+      document.getElementById("copySummary").addEventListener("click", async () => {
+        const summary = buildSummary();
+
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(summary);
+          } else {
+            const textarea = document.createElement("textarea");
+            textarea.value = summary;
+            textarea.style.position = "fixed";
+            textarea.style.opacity = "0";
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand("copy");
+            textarea.remove();
+          }
+
+          showNotice("Resumen copiado al portapapeles.", "success");
+        } catch (error) {
+          showNotice("No se pudo copiar el resumen automáticamente.", "error");
+        }
+      });
+
+      document.getElementById("copyPreviousMonth").addEventListener("click", () => {
+        const previousDate = new Date(currentDate);
+        previousDate.setMonth(previousDate.getMonth() - 1);
+        const previousKey = monthKey(previousDate);
+        const currentKey = monthKey();
+
+        if (!state.months[previousKey]) {
+          showNotice("No hay información guardada en el mes anterior.", "info");
+          return;
+        }
+
+        const confirmed = confirm(
+          `¿Querés copiar los importes y observaciones de ${monthFormatter.format(previousDate)}? Los estados quedarán como pendientes.`
+        );
+        if (!confirmed) return;
+
+        const previousMonth = state.months[previousKey];
+        const copied = {
+          availableMoney: previousMonth.availableMoney || 0,
+          expenses: previousMonth.expenses.map(item => ({
+            id: item.id || slugify(item.name),
+            name: item.name,
+            amount: Number(item.amount) || 0,
+            status: item.amount > 0 ? "pending" : "empty",
+            date: "",
+            notes: item.notes || ""
+          })),
+          updatedAt: new Date().toISOString()
+        };
+
+        state.months[currentKey] = copied;
+        saveState();
+        render();
+        showNotice("Se copiaron los datos del mes anterior.", "success");
+      });
+
+      document.getElementById("exportData").addEventListener("click", () => {
+        const exportPayload = {
+          app: "Control Mensual de Gastos",
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          data: state
+        };
+
+        const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
+          type: "application/json"
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `control-gastos-${monthKey()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+
+        showNotice("Se exportó el respaldo de todos los meses.", "success");
+      });
+
+      document.getElementById("importData").addEventListener("click", () => {
+        elements.importFile.click();
+      });
+
+      elements.importFile.addEventListener("change", async event => {
+        const file = event.target.files && event.target.files[0];
+        event.target.value = "";
+        if (!file) return;
+
+        try {
+          const raw = await file.text();
+          const parsed = JSON.parse(raw);
+          const importedState = parsed.data || parsed;
+
+          if (!importedState || typeof importedState !== "object" || !importedState.months) {
+            throw new Error("Formato inválido");
+          }
+
+          const confirmed = confirm(
+            "La importación reemplazará todos los datos locales actuales. ¿Querés continuar?"
+          );
+          if (!confirmed) return;
+
+          state = importedState;
+          saveState();
+          render();
+          showNotice("Respaldo importado correctamente.", "success");
+        } catch (error) {
+          showNotice("El archivo seleccionado no contiene un respaldo válido.", "error");
+        }
+      });
+
+      document.getElementById("clearCurrentMonth").addEventListener("click", () => {
+        const confirmed = confirm(
+          `¿Querés borrar toda la información de ${monthFormatter.format(currentDate)}?`
+        );
+        if (!confirmed) return;
+
+        state.months[monthKey()] = createMonthData();
+        saveState();
+        render();
+        showNotice("Se limpió la información del mes actual.", "success");
+      });
+
+      document.getElementById("clearAllData").addEventListener("click", () => {
+        const firstConfirmation = confirm(
+          "Esta acción eliminará todos los meses guardados. ¿Querés continuar?"
+        );
+        if (!firstConfirmation) return;
+
+        const secondConfirmation = confirm(
+          "Última confirmación: los datos no podrán recuperarse sin un respaldo exportado."
+        );
+        if (!secondConfirmation) return;
+
+        state = getDefaultState();
+        saveState();
+        render();
+        showNotice("Se eliminaron todos los datos locales.", "success");
+      });
+
+      function formatDate(dateValue) {
+        if (!dateValue) return "";
+        const [year, month, day] = dateValue.split("-").map(Number);
+        if (!year || !month || !day) return dateValue;
+        return new Intl.DateTimeFormat("es-AR").format(new Date(year, month - 1, day));
+      }
+
+      function showNotice(message, type = "info") {
+        elements.notice.textContent = message;
+        elements.notice.className = `notice show ${type}`;
+        window.clearTimeout(showNotice.timeoutId);
+        showNotice.timeoutId = window.setTimeout(() => {
+          elements.notice.className = "notice info";
+          elements.notice.textContent = "";
+        }, 4500);
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      render();
+    })();
+  </script>
+</body>
+</html>
