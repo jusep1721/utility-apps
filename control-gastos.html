@@ -368,6 +368,8 @@
 
     .control {
       width: 100%;
+      max-width: 100%;
+      min-width: 0;
       min-height: 46px;
       border: 1px solid var(--border);
       border-radius: 12px;
@@ -375,6 +377,20 @@
       color: var(--text);
       outline: none;
       padding: 11px 12px;
+    }
+
+    .expense-body > div {
+      min-width: 0;
+    }
+
+    input[type="date"].control {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      -webkit-appearance: none;
+      appearance: none;
     }
 
     .control:focus {
@@ -831,14 +847,69 @@
 
       function parseAmount(value) {
         if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+
         const normalized = String(value)
           .trim()
           .replace(/\s/g, "")
           .replace(/\$/g, "")
           .replace(/\./g, "")
           .replace(",", ".");
+
         const number = Number(normalized);
         return Number.isFinite(number) ? Math.max(0, number) : 0;
+      }
+
+      function formatMoneyMask(value) {
+        const cleaned = String(value)
+          .replace(/\./g, "")
+          .replace(/[^0-9,]/g, "");
+
+        const hasComma = cleaned.includes(",");
+        const parts = cleaned.split(",");
+        let integerPart = parts[0] || "";
+        const decimalPart = parts.slice(1).join("").slice(0, 2);
+
+        integerPart = integerPart.replace(/^0+(?=\d)/, "");
+
+        const formattedInteger = integerPart
+          ? integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+          : "";
+
+        return `${formattedInteger}${hasComma ? `,${decimalPart}` : ""}`;
+      }
+
+      function applyMoneyMask(input) {
+        const cursorPosition = input.selectionStart ?? input.value.length;
+        const logicalCharactersBeforeCursor = input.value
+          .slice(0, cursorPosition)
+          .replace(/[^0-9,]/g, "").length;
+
+        const formattedValue = formatMoneyMask(input.value);
+        input.value = formattedValue;
+
+        let logicalCount = 0;
+        let nextCursorPosition = formattedValue.length;
+
+        for (let index = 0; index < formattedValue.length; index += 1) {
+          if (/[0-9,]/.test(formattedValue[index])) {
+            logicalCount += 1;
+          }
+
+          if (logicalCount >= logicalCharactersBeforeCursor) {
+            nextCursorPosition = index + 1;
+            break;
+          }
+        }
+
+        if (logicalCharactersBeforeCursor === 0) {
+          nextCursorPosition = 0;
+        }
+
+        try {
+          input.setSelectionRange(nextCursorPosition, nextCursorPosition);
+        } catch (error) {
+          // Algunos navegadores móviles no permiten modificar el cursor.
+        }
       }
 
       function formatEditableAmount(amount) {
@@ -974,6 +1045,7 @@
         if (!expense) return;
 
         if (field === "amount") {
+          applyMoneyMask(event.target);
           expense.amount = parseAmount(event.target.value);
           normalizeStatus(expense);
         } else {
@@ -1080,6 +1152,8 @@
       }
 
       function handleAvailableMoney() {
+        applyMoneyMask(elements.availableMoney);
+
         const month = ensureCurrentMonth();
         month.availableMoney = parseAmount(elements.availableMoney.value);
         month.updatedAt = new Date().toISOString();
