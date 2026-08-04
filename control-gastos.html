@@ -295,6 +295,26 @@
       gap: 12px;
     }
 
+    .expense-group {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .expense-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .expense-group-title {
+      margin: 0;
+      padding: 0 2px;
+      font-size: 0.92rem;
+      color: #334155;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
     .expense-card {
       border: 1px solid var(--border);
       border-radius: 18px;
@@ -725,12 +745,33 @@
           <input id="usdExpense" class="control" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" />
         </div>
 
-        <button type="button" class="btn btn-primary" id="refreshDollar">Dolar hoy</button>
+        <button type="button" class="btn btn-primary" id="refreshDollar">Actualizar cotización</button>
       </div>
 
-      <div style="margin-top: 12px;">
-        <label class="field-label" for="usdExpenseName">Descripción del gasto en dólares</label>
-        <input id="usdExpenseName" class="control" type="text" maxlength="80" placeholder="Ejemplo: Suscripción, compra o servicio" />
+      <div class="expense-body" style="padding: 16px 0 0;">
+        <div class="full">
+          <label class="field-label" for="usdExpenseName">Descripción del gasto en dólares</label>
+          <input id="usdExpenseName" class="control" type="text" maxlength="80" placeholder="Ejemplo: Suscripción, compra o servicio" />
+        </div>
+
+        <div>
+          <label class="field-label" for="usdExpenseStatus">Estado</label>
+          <select id="usdExpenseStatus" class="control">
+            <option value="empty">Sin cargar</option>
+            <option value="pending">Pendiente</option>
+            <option value="paid">Pagado</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="field-label" for="usdExpenseDate">Fecha</label>
+          <input id="usdExpenseDate" class="control" type="date" />
+        </div>
+
+        <div class="full">
+          <label class="field-label" for="usdExpenseNotes">Observación</label>
+          <textarea id="usdExpenseNotes" class="control" placeholder="Observación opcional"></textarea>
+        </div>
       </div>
 
       <div class="quote-result">
@@ -775,6 +816,7 @@
         <button type="button" class="btn btn-success" id="shareWhatsApp">Compartir por WhatsApp</button>
         <button type="button" class="btn btn-primary" id="copySummary">Copiar resumen</button>
         <button type="button" class="btn btn-secondary" id="copyPreviousMonth">Copiar mes anterior</button>
+        <button type="button" class="btn btn-primary" id="sendExpenseReceipt">Enviar comprobante de expensas</button>
       </div>
     </section>
 
@@ -853,6 +895,9 @@
         dollarRate: document.getElementById("dollarRate"),
         usdExpense: document.getElementById("usdExpense"),
         usdExpenseName: document.getElementById("usdExpenseName"),
+        usdExpenseStatus: document.getElementById("usdExpenseStatus"),
+        usdExpenseDate: document.getElementById("usdExpenseDate"),
+        usdExpenseNotes: document.getElementById("usdExpenseNotes"),
         usdEquivalent: document.getElementById("usdEquivalent"),
         quoteUpdatedAt: document.getElementById("quoteUpdatedAt"),
         customExpenseList: document.getElementById("customExpenseList")
@@ -879,6 +924,9 @@
             rate: 0,
             usdAmount: 0,
             name: "Gasto en dólares",
+            status: "empty",
+            date: "",
+            notes: "",
             updatedAt: ""
           },
           updatedAt: new Date().toISOString()
@@ -940,9 +988,16 @@
             rate: 0,
             usdAmount: 0,
             name: "Gasto en dólares",
+            status: "empty",
+            date: "",
+            notes: "",
             updatedAt: ""
           };
         }
+
+        if (!("status" in month.dollarExpense)) month.dollarExpense.status = "empty";
+        if (!("date" in month.dollarExpense)) month.dollarExpense.date = "";
+        if (!("notes" in month.dollarExpense)) month.dollarExpense.notes = "";
 
         const existingNames = new Set(month.expenses.map(item => item.name));
         DEFAULT_EXPENSES.forEach(name => {
@@ -1060,6 +1115,9 @@
         elements.dollarRate.value = formatEditableAmount(month.dollarExpense.rate || 0);
         elements.usdExpense.value = formatEditableAmount(month.dollarExpense.usdAmount || 0);
         elements.usdExpenseName.value = month.dollarExpense.name || "Gasto en dólares";
+        elements.usdExpenseStatus.value = month.dollarExpense.status || "empty";
+        elements.usdExpenseDate.value = month.dollarExpense.date || "";
+        elements.usdExpenseNotes.value = month.dollarExpense.notes || "";
 
         renderExpenses(month);
         renderCustomExpenses(month);
@@ -1070,7 +1128,24 @@
       function renderExpenses(month) {
         elements.expenseList.innerHTML = "";
 
-        month.expenses.forEach((expense, index) => {
+        const groups = [
+          { title: "🏠 Vivienda", names: ["Alquiler", "Expensas", "Tasa General Municipal"] },
+          { title: "⚡ Servicios", names: ["Edenor", "Naturgy", "Telecentro", "Personal"] },
+          { title: "🚗 Vehículo", names: ["Impuesto Automotor"] },
+          { title: "💳 Tarjetas", names: ["Tarjeta Crédito Visa", "Tarjeta Crédito Amex"] }
+        ];
+
+        const indexByName = new Map(month.expenses.map((expense, index) => [expense.name, index]));
+
+        groups.forEach(group => {
+          const groupElement = document.createElement("section");
+          groupElement.className = "expense-group";
+          groupElement.innerHTML = `<h3 class="expense-group-title">${group.title}</h3>`;
+
+          group.names.forEach(name => {
+            const index = indexByName.get(name);
+            if (index === undefined) return;
+            const expense = month.expenses[index];
           normalizeStatus(expense);
 
           const card = document.createElement("article");
@@ -1146,7 +1221,10 @@
             </div>
           `;
 
-          elements.expenseList.appendChild(card);
+            groupElement.appendChild(card);
+          });
+
+          elements.expenseList.appendChild(groupElement);
         });
 
         elements.expenseList.querySelectorAll("[data-field]").forEach(control => {
@@ -1354,6 +1432,18 @@
         month.dollarExpense.usdAmount = parseAmount(elements.usdExpense.value);
         month.dollarExpense.name =
           elements.usdExpenseName.value.trim() || "Gasto en dólares";
+        month.dollarExpense.status = elements.usdExpenseStatus.value;
+        month.dollarExpense.date = elements.usdExpenseDate.value;
+        month.dollarExpense.notes = elements.usdExpenseNotes.value;
+
+        if (month.dollarExpense.usdAmount <= 0) {
+          month.dollarExpense.status = "empty";
+          elements.usdExpenseStatus.value = "empty";
+        } else if (month.dollarExpense.status === "empty") {
+          month.dollarExpense.status = "pending";
+          elements.usdExpenseStatus.value = "pending";
+        }
+
         month.updatedAt = new Date().toISOString();
 
         saveState();
@@ -1478,12 +1568,17 @@
         );
         const total = regularTotal + dollarEquivalent;
 
-        const paid = regularExpenses
-          .filter(item => item.status === "paid")
-          .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-        const pending = regularExpenses
-          .filter(item => item.status === "pending")
-          .reduce((sum, item) => sum + (Number(item.amount) || 0), 0) + dollarEquivalent;
+        const paid =
+          regularExpenses
+            .filter(item => item.status === "paid")
+            .reduce((sum, item) => sum + (Number(item.amount) || 0), 0) +
+          (month.dollarExpense.status === "paid" ? dollarEquivalent : 0);
+
+        const pending =
+          regularExpenses
+            .filter(item => item.status === "pending")
+            .reduce((sum, item) => sum + (Number(item.amount) || 0), 0) +
+          (month.dollarExpense.status === "pending" ? dollarEquivalent : 0);
         const free = (Number(month.availableMoney) || 0) - total;
         const currentBalance = (Number(month.availableMoney) || 0) - paid;
 
@@ -1589,11 +1684,22 @@
           const equivalent =
             month.dollarExpense.usdAmount * month.dollarExpense.rate;
 
+          const dollarIcon =
+            month.dollarExpense.status === "paid"
+              ? "✅"
+              : month.dollarExpense.status === "pending"
+              ? "⏳"
+              : "⚪";
+
+          const dollarDetails = [];
+          if (month.dollarExpense.date) dollarDetails.push(formatDate(month.dollarExpense.date));
+          if (month.dollarExpense.notes) dollarDetails.push(month.dollarExpense.notes.trim());
+
           lines.push(
-            `💵 ${month.dollarExpense.name || "Gasto en dólares"}: USD ${new Intl.NumberFormat("es-AR", {
+            `${dollarIcon} ${month.dollarExpense.name || "Gasto en dólares"}: USD ${new Intl.NumberFormat("es-AR", {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
-            }).format(month.dollarExpense.usdAmount)} × ${moneyFormatter.format(month.dollarExpense.rate)} = ${moneyFormatter.format(equivalent)}`
+            }).format(month.dollarExpense.usdAmount)} × ${moneyFormatter.format(month.dollarExpense.rate)} = ${moneyFormatter.format(equivalent)}${dollarDetails.length ? ` — ${dollarDetails.join(" | ")}` : ""}`
           );
         }
 
@@ -1649,7 +1755,35 @@
       elements.dollarRate.addEventListener("input", handleDollarInput);
       elements.usdExpense.addEventListener("input", handleDollarInput);
       elements.usdExpenseName.addEventListener("input", handleDollarInput);
+      elements.usdExpenseStatus.addEventListener("change", handleDollarInput);
+      elements.usdExpenseDate.addEventListener("change", handleDollarInput);
+      elements.usdExpenseNotes.addEventListener("input", handleDollarInput);
       document.getElementById("refreshDollar").addEventListener("click", refreshDollarQuote);
+
+      document.getElementById("sendExpenseReceipt").addEventListener("click", () => {
+        const monthText = monthFormatter.format(currentDate);
+        const capitalizedMonth =
+          monthText.charAt(0).toUpperCase() + monthText.slice(1);
+
+        const recipient = "administracion@construtres.com.ar";
+        const subject = `Pago de expensas - ${capitalizedMonth}`;
+        const body = [
+          "Hola,",
+          "",
+          `Por medio del presente, adjunto el comprobante correspondiente al pago de las expensas del mes de ${monthText}.`,
+          "",
+          "Saludos cordiales,",
+          "",
+          "José Domínguez"
+        ].join("\n");
+
+        alert("Recordá adjuntar el comprobante antes de enviar el correo.");
+
+        window.location.href =
+          `mailto:${recipient}` +
+          `?subject=${encodeURIComponent(subject)}` +
+          `&body=${encodeURIComponent(body)}`;
+      });
 
       document.getElementById("shareWhatsApp").addEventListener("click", () => {
         const summary = buildSummary();
@@ -1726,6 +1860,9 @@
             rate: Number(previousMonth.dollarExpense?.rate) || 0,
             usdAmount: Number(previousMonth.dollarExpense?.usdAmount) || 0,
             name: previousMonth.dollarExpense?.name || "Gasto en dólares",
+            status: previousMonth.dollarExpense?.usdAmount > 0 ? "pending" : "empty",
+            date: "",
+            notes: previousMonth.dollarExpense?.notes || "",
             updatedAt: previousMonth.dollarExpense?.updatedAt || ""
           },
           updatedAt: new Date().toISOString()
